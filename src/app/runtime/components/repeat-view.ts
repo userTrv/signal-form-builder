@@ -85,9 +85,12 @@ export class RepeatView {
     this.state().markAsDirty();
     afterNextRender(
       () => {
-        const buttons = this.host.nativeElement.querySelectorAll<HTMLButtonElement>('.sfb-row')[to]?.querySelectorAll('button');
-        const target = buttons?.[from < to ? 1 : 0];
-        (target && !target.disabled ? target : buttons?.[2])?.focus();
+        // Keep focus on the same move button; at the first/last row it is disabled, so use
+        // the opposite one. Never fall back to "Remove": a repeated Enter would delete the row.
+        const buttons = this.host.nativeElement.querySelectorAll<HTMLElement>('.sfb-row')[to]?.querySelectorAll<HTMLButtonElement>('button');
+        const [up, down] = [buttons?.[0], buttons?.[1]];
+        const target = [from < to ? down : up, from < to ? up : down].find((b) => b && !b.disabled);
+        target?.focus();
       },
       { injector: this.injector },
     );

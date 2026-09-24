@@ -203,3 +203,36 @@ describe('async option lists', () => {
     expect(started()).toBe(before + 2);
   });
 });
+
+describe('repeatable groups', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  const LIST: FormSchema = {
+    id: 'list',
+    title: 'List',
+    fields: [{ type: 'repeat', key: 'rows', label: 'Rows', itemLabel: 'Row', fields: [{ type: 'text', key: 'name', label: 'Name' }] }],
+  };
+  const aria = (el: HTMLElement, label: string) => el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
+
+  it('adds a row and focuses it; moving keeps focus on a move button, never on Remove', async () => {
+    const { fixture, el } = await render(LIST);
+    expect(el.querySelectorAll('.sfb-row').length).toBe(1); // a repeat starts with one row
+    button(el, '+ Add row').click();
+    await fixture.whenStable();
+    expect(el.querySelectorAll('.sfb-row').length).toBe(2);
+    expect((document.activeElement as HTMLElement).id).toMatch(/rows-1-name$/);
+
+    aria(el, 'Move Row 2 up').click();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(aria(el, 'Move Row 1 down')); // "up" is disabled at the top
+
+    aria(el, 'Move Row 1 down').click();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(aria(el, 'Move Row 2 up'));
+
+    aria(el, 'Remove Row 2').click();
+    await fixture.whenStable();
+    expect(el.querySelectorAll('.sfb-row').length).toBe(1);
+    expect((document.activeElement as HTMLElement).id).toMatch(/rows-0-name$/);
+  });
+});
