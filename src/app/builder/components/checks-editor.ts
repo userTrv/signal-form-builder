@@ -6,6 +6,8 @@ import { ExpressionInput } from './expression-input';
 @Component({
   selector: 'sfb-checks-editor',
   imports: [ExpressionInput],
+  // Options use `[selected]`: a `[value]` on the <select> is applied before the @for
+  // options exist, so the browser would show the first option instead.
   template: `
     @for (check of checks(); track $index; let i = $index) {
       <div class="check-card">
@@ -20,9 +22,9 @@ import { ExpressionInput } from './expression-input';
         <label class="insp-label" [for]="idPrefix() + '-msg-' + i">Message</label>
         <input class="sfb-input" [id]="idPrefix() + '-msg-' + i" [value]="check.message" (input)="patch(i, { message: $any($event.target).value })" />
         <label class="insp-label" [for]="idPrefix() + '-target-' + i">Show error on</label>
-        <select class="sfb-input" [id]="idPrefix() + '-target-' + i" [value]="check.target" (change)="patch(i, { target: $any($event.target).value })">
+        <select class="sfb-input" [id]="idPrefix() + '-target-' + i" (change)="patch(i, { target: $any($event.target).value })">
           @for (key of targets(); track key) {
-            <option [value]="key">{{ key }}</option>
+            <option [value]="key" [selected]="key === check.target">{{ key }}</option>
           }
         </select>
         <button type="button" class="btn-link" (click)="removeAt(i)">Remove rule</button>

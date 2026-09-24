@@ -87,10 +87,10 @@
       }
       @if (spec()?.needsOptions) {
         <label class="insp-label" for="insp-src">Options come from</label>
-        <select class="sfb-input" id="insp-src" [value]="f.optionsSource?.provider ?? 'static'" (change)="setOptionsMode($any($event.target).value)">
-          <option value="static">A static list</option>
+        <select class="sfb-input" id="insp-src" (change)="setOptionsMode($any($event.target).value)">
+          <option value="static" [selected]="!f.optionsSource">A static list</option>
           @for (p of providers; track p.name) {
-            <option [value]="p.name">Async: {{ p.label }}</option>
+            <option [value]="p.name" [selected]="f.optionsSource?.provider === p.name">Async: {{ p.label }}</option>
           }
         </select>
         @if (f.optionsSource) {
