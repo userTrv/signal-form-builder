@@ -1,0 +1,90 @@
+import { defineSchema } from '../engine';
+
+export const EVENT_REGISTRATION = defineSchema({
+  $schema: 'sfb/v1',
+  id: 'eventRegistration',
+  title: 'Conference registration',
+  description: 'Repeatable attendees with a per-row computed price, a total over all rows, and an invoice block behind a switch.',
+  submitLabel: 'Register',
+  fields: [
+    {
+      type: 'select',
+      key: 'event',
+      label: 'Event',
+      width: 'half',
+      options: [
+        { value: 'ng-berlin', label: 'Angular Summit Berlin' },
+        { value: 'signals-camp', label: 'Signals Camp Amsterdam' },
+        { value: 'frontend-warsaw', label: 'Frontend Days Warsaw' },
+      ],
+      rules: { required: true },
+    },
+    { type: 'date-range', key: 'days', label: 'Days attending', width: 'half', startLabel: 'First day', endLabel: 'Last day', rules: { required: true } },
+    {
+      type: 'repeat',
+      key: 'attendees',
+      label: 'Attendees',
+      itemLabel: 'Attendee',
+      minItems: 1,
+      maxItems: 10,
+      fields: [
+        { type: 'text', key: 'name', label: 'Name', width: 'half', rules: { required: true } },
+        { type: 'email', key: 'email', label: 'Email', width: 'half', rules: { required: true } },
+        {
+          type: 'select',
+          key: 'ticket',
+          label: 'Ticket',
+          width: 'half',
+          options: [
+            { value: 'standard', label: 'Standard — €199' },
+            { value: 'vip', label: 'VIP — €449' },
+            { value: 'student', label: 'Student — €99' },
+          ],
+          rules: { required: true },
+        },
+        {
+          type: 'number',
+          key: 'price',
+          label: 'Price',
+          prefix: '€',
+          width: 'half',
+          computed: "ticket == 'vip' ? 449 : ticket == 'student' ? 99 : ticket == 'standard' ? 199 : null",
+        },
+        {
+          type: 'text',
+          key: 'studentId',
+          label: 'Student ID',
+          visibleWhen: "ticket == 'student'",
+          rules: { required: true, pattern: { regex: '^[A-Z]{2}\\d{6}$', message: 'Two capital letters and six digits, e.g. AB123456' } },
+        },
+      ],
+    },
+    {
+      type: 'text',
+      key: 'promo',
+      label: 'Promo code',
+      width: 'half',
+      hint: 'Try NGCONF or SIGNALS — checked against the mock server.',
+      rules: { async: [{ name: 'promoCode', debounceMs: 500 }] },
+    },
+    { type: 'number', key: 'attendeeCount', label: 'Attendees', width: 'half', computed: 'len(attendees)' },
+    {
+      type: 'number',
+      key: 'total',
+      label: 'Total',
+      prefix: '€',
+      computed: 'sum(attendees.price)',
+    },
+    { type: 'switch', key: 'invoice', label: 'I need an invoice for a company' },
+    {
+      type: 'group',
+      key: 'company',
+      label: 'Company details',
+      visibleWhen: 'invoice',
+      fields: [
+        { type: 'text', key: 'name', label: 'Company name', width: 'half', rules: { required: true } },
+        { type: 'text', key: 'vatId', label: 'VAT ID', width: 'half', rules: { required: true, pattern: { regex: '^[A-Z]{2}[A-Z0-9]{8,12}$', message: 'e.g. DE123456789' } } },
+      ],
+    },
+  ],
+});

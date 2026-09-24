@@ -1,0 +1,154 @@
+@if (node(); as n) {
+  <div class="insp-head">
+    <div>
+      <p class="muted small">{{ typeLabel() }}</p>
+      <h2>{{ title(n) || '(no label)' }}</h2>
+    </div>
+    <button type="button" class="btn-link" (click)="store.selected.set(null)">Form settings</button>
+  </div>
+
+  @if (issues().length) {
+    <ul class="insp-issues" aria-label="Problems with this node">
+      @for (issue of issues(); track $index) {
+        <li [class.warn]="issue.severity === 'warning'">{{ issue.message }} <code>{{ issue.path }}</code></li>
+      }
+    </ul>
+  }
+
+  <section class="insp-section" aria-labelledby="insp-basics">
+    <h3 id="insp-basics">Basics</h3>
+    @if (isStep(n)) {
+      <label class="insp-label" for="insp-title">Title</label>
+      <input class="sfb-input" id="insp-title" [value]="n.title" (input)="set('title', $any($event.target).value)" />
+      <label class="insp-label" for="insp-id">Step id</label>
+      <input class="sfb-input mono" id="insp-id" [value]="n.id" (input)="set('id', $any($event.target).value)" />
+      <label class="insp-label" for="insp-desc">Description</label>
+      <input class="sfb-input" id="insp-desc" [value]="n.description ?? ''" (input)="set('description', $any($event.target).value)" />
+    } @else {
+      <label class="insp-label" for="insp-label">Label</label>
+      <input class="sfb-input" id="insp-label" [value]="$any(n).label" (input)="set('label', $any($event.target).value)" />
+      <label class="insp-label" for="insp-key">Key <span class="muted small">(property name in the value)</span></label>
+      <input class="sfb-input mono" id="insp-key" [value]="$any(n).key" spellcheck="false" (input)="set('key', $any($event.target).value)" />
+      <label class="insp-label" for="insp-hint">Hint</label>
+      <input class="sfb-input" id="insp-hint" [value]="$any(n).hint ?? ''" (input)="set('hint', $any($event.target).value)" />
+    }
+    @if (field(); as f) {
+      @if (['text', 'textarea', 'email', 'number', 'select'].includes(f.type)) {
+        <label class="insp-label" for="insp-ph">Placeholder</label>
+        <input class="sfb-input" id="insp-ph" [value]="f.placeholder ?? ''" (input)="set('placeholder', $any($event.target).value)" />
+      }
+      <fieldset class="insp-fieldset">
+        <legend class="insp-label">Width</legend>
+        <label class="sfb-check"><input type="radio" name="insp-width" [checked]="f.width !== 'half'" (change)="set('width', undefined)" /> Full row</label>
+        <label class="sfb-check"><input type="radio" name="insp-width" [checked]="f.width === 'half'" (change)="set('width', 'half')" /> Half (two per row)</label>
+      </fieldset>
+    }
+  </section>
+
+  @if (field(); as f) {
+    <section class="insp-section" aria-labelledby="insp-type" [hidden]="!hasTypeSettings()">
+      <h3 id="insp-type">{{ spec()?.label ?? f.type }} settings</h3>
+      @switch (f.type) {
+        @case ('text') {
+          <label class="sfb-check"><input type="checkbox" [checked]="!!f.secret" (change)="set('secret', $any($event.target).checked)" /> Password input (masked)</label>
+        }
+        @case ('textarea') {
+          <label class="insp-label" for="insp-rows">Rows</label>
+          <input class="sfb-input" type="number" id="insp-rows" [value]="f.rows ?? ''" (input)="setNumber('rows', $any($event.target).value)" />
+        }
+        @case ('number') {
+          <div class="insp-grid">
+            <div><label class="insp-label" for="insp-prefix">Prefix</label><input class="sfb-input" id="insp-prefix" [value]="f.prefix ?? ''" (input)="set('prefix', $any($event.target).value)" /></div>
+            <div><label class="insp-label" for="insp-suffix">Suffix</label><input class="sfb-input" id="insp-suffix" [value]="f.suffix ?? ''" (input)="set('suffix', $any($event.target).value)" /></div>
+            <div><label class="insp-label" for="insp-step">Step</label><input class="sfb-input" type="number" id="insp-step" [value]="f.step ?? ''" (input)="setNumber('step', $any($event.target).value)" /></div>
+          </div>
+        }
+        @case ('phone') {
+          <label class="insp-label" for="insp-mask">Mask (# = digit)</label>
+          <input class="sfb-input mono" id="insp-mask" [value]="f.mask ?? ''" (input)="set('mask', $any($event.target).value)" />
+        }
+        @case ('rating') {
+          <label class="insp-label" for="insp-scale">Stars</label>
+          <input class="sfb-input" type="number" id="insp-scale" min="2" max="10" [value]="f.scale ?? 5" (input)="setNumber('scale', $any($event.target).value)" />
+        }
+        @case ('file') {
+          <label class="insp-label" for="insp-accept">Accept</label>
+          <input class="sfb-input mono" id="insp-accept" [value]="f.accept ?? ''" placeholder=".pdf,image/*" (input)="set('accept', $any($event.target).value)" />
+          <label class="insp-label" for="insp-maxsize">Max size (MB)</label>
+          <input class="sfb-input" type="number" id="insp-maxsize" [value]="f.maxSizeMb ?? ''" (input)="setNumber('maxSizeMb', $any($event.target).value)" />
+          <label class="sfb-check"><input type="checkbox" [checked]="!!f.multiple" (change)="set('multiple', $any($event.target).checked)" /> Multiple files</label>
+        }
+        @case ('date-range') {
+          <div class="insp-grid">
+            <div><label class="insp-label" for="insp-start">Start label</label><input class="sfb-input" id="insp-start" [value]="f.startLabel ?? ''" (input)="set('startLabel', $any($event.target).value)" /></div>
+            <div><label class="insp-label" for="insp-end">End label</label><input class="sfb-input" id="insp-end" [value]="f.endLabel ?? ''" (input)="set('endLabel', $any($event.target).value)" /></div>
+          </div>
+        }
+      }
+      @if (spec()?.needsOptions) {
+        <label class="insp-label" for="insp-src">Options come from</label>
+        <select class="sfb-input" id="insp-src" [value]="f.optionsSource?.provider ?? 'static'" (change)="setOptionsMode($any($event.target).value)">
+          <option value="static">A static list</option>
+          @for (p of providers; track p.name) {
+            <option [value]="p.name">Async: {{ p.label }}</option>
+          }
+        </select>
+        @if (f.optionsSource) {
+          <sfb-expression-input label="Provider params" inputId="insp-src-params" [value]="f.optionsSource.params" [scopes]="scopes()" placeholder="country" help="Passed to the provider; the list reloads when it changes." (valueChange)="setOptionsParams($event, f)" />
+        } @else {
+          <sfb-options-editor [options]="f.options ?? []" (changed)="setOptions($event)" />
+        }
+      }
+      @if (spec()?.computable) {
+        <sfb-expression-input label="Computed value" inputId="insp-computed" [value]="f.computed" [scopes]="scopes()" placeholder="qty * price" help="Makes the field read-only and derives its value." (valueChange)="set('computed', $event)" />
+      }
+    </section>
+
+    @if (!f.computed && spec()?.rules?.length) {
+      <section class="insp-section" aria-labelledby="insp-rules">
+        <h3 id="insp-rules">Validation</h3>
+        <sfb-rules-editor [node]="f" [scopes]="scopes()" (changed)="setRules($event)" />
+      </section>
+    }
+  }
+
+  @if (isRepeat(n)) {
+    <section class="insp-section" aria-labelledby="insp-rep">
+      <h3 id="insp-rep">Rows</h3>
+      <label class="insp-label" for="insp-item">Row label</label>
+      <input class="sfb-input" id="insp-item" [value]="n.itemLabel ?? ''" (input)="set('itemLabel', $any($event.target).value)" />
+      <div class="insp-grid">
+        <div><label class="insp-label" for="insp-min">Min rows</label><input class="sfb-input" type="number" id="insp-min" [value]="n.minItems ?? ''" (input)="setNumber('minItems', $any($event.target).value)" /></div>
+        <div><label class="insp-label" for="insp-max">Max rows</label><input class="sfb-input" type="number" id="insp-max" [value]="n.maxItems ?? ''" (input)="setNumber('maxItems', $any($event.target).value)" /></div>
+      </div>
+    </section>
+  }
+
+  <section class="insp-section" aria-labelledby="insp-logic">
+    <h3 id="insp-logic">Conditions</h3>
+    <sfb-expression-input label="Visible when" inputId="insp-visible" [value]="n.visibleWhen" [scopes]="scopes()" placeholder="plan == 'team'" help="Always visible when empty. Hidden fields are skipped by validation." (valueChange)="set('visibleWhen', $event)" />
+    @if (!isStep(n)) {
+      <sfb-expression-input label="Enabled when" inputId="insp-enabled" [value]="n.enabledWhen" [scopes]="scopes()" placeholder="!empty(country)" help="Always enabled when empty." (valueChange)="set('enabledWhen', $event)" />
+    }
+  </section>
+
+  @if (isGroup(n) || isRepeat(n)) {
+    <section class="insp-section" aria-labelledby="insp-checks">
+      <h3 id="insp-checks">Cross-field rules {{ isRepeat(n) ? '(per row)' : '' }}</h3>
+      <sfb-checks-editor [checks]="n.checks ?? []" [scopes]="innerScopes()" idPrefix="node-checks" (changed)="setChecks($event)" />
+    </section>
+  }
+
+  <section class="insp-section" aria-labelledby="insp-move">
+    <h3 id="insp-move">Position</h3>
+    <label class="insp-label" for="insp-moveto">Move to</label>
+    <select class="sfb-input" id="insp-moveto" [value]="''" (change)="moveTo($any($event.target).value)">
+      <option value="">Choose a container…</option>
+      @for (d of destinations(); track d.label) {
+        <option [value]="d.path.length ? d.path.join('.') : 'root'">{{ d.label }}</option>
+      }
+    </select>
+  </section>
+} @else {
+  <sfb-form-settings />
+}

@@ -1,0 +1,6 @@
+// Design tokens + global styles. Components use these custom properties only, so the whole
+// app (including rendered forms) switches theme by flipping `data-theme` on <html>.
+@use 'styles/tokens';
+@use 'styles/base';
+@use 'styles/form';
+@use 'styles/builder';

@@ -1,0 +1,78 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Playground</h1>
+      <p class="muted lead">
+        Each form below is rendered from a JSON schema by the same engine. Fill it in, submit it,
+        and watch the typed value, the generated TypeScript type and the field state update live.
+      </p>
+    </div>
+  </div>
+
+  <div class="example-picker" role="group" aria-label="Example schemas">
+    @for (ex of examples; track ex.id) {
+      <button type="button" class="chip" [attr.aria-pressed]="ex.id === entry().id" (click)="select(ex.id)">
+        {{ ex.label }}
+      </button>
+    }
+    <a class="chip ghost" routerLink="/builder" [queryParams]="{ example: entry().id }">Open this one in the builder →</a>
+  </div>
+
+  <div class="split">
+    <div class="card form-card">
+      <sfb-dynamic-form [schema]="entry().schema" (ready)="instance.set($event)" (submitted)="onSubmitted($event)" />
+    </div>
+
+    <aside class="side" aria-label="Inspector">
+      @if (result(); as r) {
+        <section class="card result" aria-live="polite">
+          <div class="result-head">
+            <h2>Submitted ✓</h2>
+            <button type="button" class="btn-link" (click)="result.set(null)">Dismiss</button>
+          </div>
+          <p class="muted small">Validated value at {{ r.at.toLocaleTimeString() }} — typed as <code>SubmittedValue&lt;typeof schema&gt;</code>.</p>
+          <sfb-code-block [code]="resultJson()" label="submitted value (JSON)" />
+        </section>
+      }
+
+      <section class="card">
+        <sfb-tabs [tabs]="tabs" [(active)]="tab" label="Inspector" prefix="pg" />
+        <div class="tab-panel" role="tabpanel" id="pg-panel" [attr.aria-labelledby]="'pg-tab-' + tab()">
+          @switch (tab()) {
+            @case ('value') {
+              <p class="muted small">The model signal, as it changes. Computed fields are part of it.</p>
+              <sfb-code-block [code]="valueJson()" label="model value (JSON)" />
+            }
+            @case ('types') {
+              <div class="seg" role="group" aria-label="Type flavour">
+                <button type="button" [attr.aria-pressed]="typeMode() === 'draft'" (click)="typeMode.set('draft')">While editing</button>
+                <button type="button" [attr.aria-pressed]="typeMode() === 'submitted'" (click)="typeMode.set('submitted')">After valid submit</button>
+              </div>
+              <p class="muted small">
+                Generated from the schema. The same shape is inferred at compile time with
+                <code>FormValue&lt;typeof schema&gt;</code> / <code>SubmittedValue&lt;typeof schema&gt;</code>.
+              </p>
+              <sfb-code-block [code]="typeText()" label="TypeScript" />
+            }
+            @case ('schema') {
+              <sfb-code-block [code]="schemaJson()" label="schema (JSON)" />
+            }
+            @case ('state') {
+              @if (state(); as s) {
+                <dl class="state-grid">
+                  <div><dt>valid</dt><dd [class.on]="s.valid">{{ s.valid }}</dd></div>
+                  <div><dt>invalid</dt><dd [class.bad]="s.invalid">{{ s.invalid }}</dd></div>
+                  <div><dt>pending</dt><dd [class.on]="s.pending">{{ s.pending }}</dd></div>
+                  <div><dt>dirty</dt><dd [class.on]="s.dirty">{{ s.dirty }}</dd></div>
+                  <div><dt>touched</dt><dd [class.on]="s.touched">{{ s.touched }}</dd></div>
+                  <div><dt>errors</dt><dd>{{ s.errors }}</dd></div>
+                </dl>
+                <p class="muted small">Root <code>FieldState</code> signals. Hidden fields do not count towards validity.</p>
+              }
+            }
+          }
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>

@@ -1,0 +1,109 @@
+<div class="page">
+  <div class="prose">
+    <h1>Why Signal Forms?</h1>
+    <p class="lead muted">
+      The same sign-up form written twice — once with typed Reactive Forms, once with Signal Forms from
+      <code>&#64;angular/forms/signals</code>. It is the form behind the
+      <a routerLink="/playground" [queryParams]="{ example: 'signup' }">sign-up example</a>: async username check,
+      password confirmation, and a “seats” field that exists only for the Team plan.
+    </p>
+    <p class="small muted">
+      Status: in the installed Angular 22.2 typings every Signal Forms API used here is marked
+      <code>&#64;publicApi 22.0</code>. They were experimental in Angular 20–21 and their shape changed between those
+      versions (this project was written against the typings in <code>node_modules</code>, not against older blog posts).
+      The only experimental piece I found is the WebMCP integration, which this project does not use.
+    </p>
+  </div>
+
+  <h2>Component code</h2>
+  <div class="compare">
+    <div>
+      <h3>Reactive Forms (typed)</h3>
+      <sfb-code-block [code]="reactive" label="signup-reactive.ts" />
+    </div>
+    <div>
+      <h3>Signal Forms</h3>
+      <sfb-code-block [code]="signals" label="signup-signals.ts" />
+    </div>
+  </div>
+
+  <h2>Template</h2>
+  <div class="compare">
+    <sfb-code-block [code]="reactiveTpl" label="reactive template" />
+    <sfb-code-block [code]="signalsTpl" label="signals template" />
+  </div>
+
+  <div class="prose">
+    <h2>What gets simpler</h2>
+    <ul>
+      <li>
+        <strong>The model is the source of truth.</strong> The form wraps a plain <code>signal&lt;Signup&gt;</code>;
+        there is no <code>value</code> vs <code>getRawValue()</code> split caused by disabled controls, and the value
+        type is the model type.
+      </li>
+      <li>
+        <strong>Conditional logic is declarative.</strong> <code>hidden</code>, <code>disabled</code>,
+        <code>readonly</code> and <code>required(…, &#123; when &#125;)</code> are reactive functions instead of
+        <code>valueChanges</code> subscriptions calling <code>setValidators</code> and
+        <code>updateValueAndValidity</code>.
+      </li>
+      <li>
+        <strong>Cross-field errors land where they belong.</strong> <code>validate(p.confirmPassword, …)</code> reads
+        <code>valueOf(p.password)</code>; in Reactive Forms the error of a group validator lives on the group.
+      </li>
+      <li>
+        <strong>Async validation is built on <code>resource()</code>.</strong> Debounce is an option; a newer request
+        aborts the previous one through an <code>AbortSignal</code>; <code>pending()</code> is a signal.
+      </li>
+      <li>
+        <strong>All state is signals</strong> (<code>valid()</code>, <code>touched()</code>, <code>errors()</code>,
+        <code>errorSummary()</code>), which fits zoneless, OnPush-by-default Angular 22 without
+        <code>statusChanges</code> plumbing.
+      </li>
+      <li>
+        <strong>Custom controls are small.</strong> A component with <code>value = model()</code> implements
+        <code>FormValueControl</code>; no <code>ControlValueAccessor</code>, no <code>NG_VALUE_ACCESSOR</code>. The rating,
+        phone, file and checkbox-group controls in this project are 50–90 lines each.
+      </li>
+      <li>
+        <strong>Rules are plain functions over paths</strong>, which is what made a schema → rules translator practical:
+        the whole mapping in this project (<code>engine/model/build-rules.ts</code>) is about 200 lines.
+      </li>
+    </ul>
+
+    <h2>What is still missing or needs care</h2>
+    <ul>
+      <li>
+        <strong>It is new.</strong> Stable only since Angular 22; libraries, examples and team experience are still
+        catching up, and code written for the v20/v21 experimental API needs changes (the binding directive was renamed
+        along the way and is <code>[formField]</code> now; <code>hidden(path, fn)</code> is deprecated in favour of
+        <code>hidden(path, &#123; when &#125;)</code>).
+      </li>
+      <li>
+        <strong>No computed fields.</strong> There is no rule for “this field's value is derived from others”. This
+        project marks such fields <code>readonly</code> and writes the derived values back into the model from one
+        <code>effect</code> (a pure, structurally-sharing <code>applyComputed</code>).
+      </li>
+      <li>
+        <strong>Hidden fields keep their values.</strong> <code>hidden()</code> removes a field from validation and from
+        the parent's validity, but not from the model — strip what you do not want to send.
+      </li>
+      <li>
+        <strong>Array rows are tracked by object identity</strong> (a symbol stored on each row object). Replacing a row
+        with a copy (JSON round-trip, <code>structuredClone</code>) makes it a new row with fresh touched/dirty state.
+        Spread-copies keep the symbol, so immutable updates are fine.
+      </li>
+      <li>
+        <strong>Static typing needs a static model.</strong> For schemas that only exist at runtime the model is a
+        <code>Record&lt;string, unknown&gt;</code> and paths are looked up by key, which needs casts (kept in one file
+        here). For schemas written <code>as const</code> this project recovers full typing at the type level.
+      </li>
+      <li>
+        <strong>Migration is incremental, not free.</strong> <code>&#64;angular/forms/signals/compat</code> provides
+        <code>compatForm</code> and <code>SignalFormControl</code> to mix both worlds; this project does not use them, so I
+        cannot vouch for them beyond their typings.
+      </li>
+      <li>Async validators run only after the field's synchronous validators pass (documented behaviour).</li>
+    </ul>
+  </div>
+</div>

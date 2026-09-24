@@ -1,0 +1,65 @@
+<div class="page">
+  <div class="prose">
+    <h1>Performance</h1>
+    <p class="lead muted">
+      A generated schema: 300 top-level fields (text, number, select, checkbox, date; every 10th one conditional)
+      plus a repeatable group with 50 rows, each with a computed line total, and a computed grand total over all rows.
+      The benchmark dispatches real <code>input</code> events and measures the time until Angular has finished
+      rendering (<code>afterNextRender</code>). It runs in your browser — numbers depend on your machine.
+    </p>
+  </div>
+
+  <div class="toolbar">
+    <button type="button" class="btn secondary" (click)="renderStress()" [disabled]="running()">1. Render the stress form</button>
+    <button type="button" class="btn primary" (click)="runBenchmark()" [disabled]="running()">
+      @if (running()) {
+        <span class="spinner" aria-hidden="true"></span> Measuring…
+      } @else {
+        2. Run the keystroke benchmark
+      }
+    </button>
+  </div>
+
+  <section class="card" aria-live="polite">
+    <h2>Results</h2>
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr><th scope="col">Measurement</th><th scope="col">Samples</th><th scope="col">Median</th><th scope="col">p95</th><th scope="col">Max</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              First render of the stress form
+              @if (controls()) {
+                ({{ fieldCount() }} schema fields → {{ controls() }} rendered controls)
+              }
+            </td>
+            <td class="num">1</td>
+            <td class="num">{{ fmt(renderMs()) }}</td>
+            <td class="num">–</td>
+            <td class="num">–</td>
+          </tr>
+          @for (r of results(); track r.label) {
+            <tr>
+              <td>{{ r.label }}</td>
+              <td class="num">{{ r.samples }}</td>
+              <td class="num">{{ fmt(r.median) }}</td>
+              <td class="num">{{ fmt(r.p95) }}</td>
+              <td class="num">{{ fmt(r.max) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (grandTotal() !== null) {
+      <p class="muted small">Sanity check: grand total after the run = {{ grandTotal() }} (row 26: qty × price 10).</p>
+    }
+  </section>
+
+  @if (schema(); as s) {
+    <section class="card perf-form" aria-label="Stress form">
+      <sfb-dynamic-form [schema]="s" />
+    </section>
+  }
+</div>

@@ -1,0 +1,62 @@
+@let inst = instance();
+<form class="sfb-form" novalidate [attr.aria-labelledby]="showHeader() ? inst.name + '-title' : null" (submit)="onSubmit($event)">
+  @if (showHeader()) {
+    <header class="sfb-form-head">
+      <h2 [id]="inst.name + '-title'">{{ inst.schema.title }}</h2>
+      @if (inst.schema.description) {
+        <p class="muted">{{ inst.schema.description }}</p>
+      }
+    </header>
+  }
+
+  <sfb-error-summary
+    [items]="summaryItems()"
+    [title]="isWizard() && summaryItems().length ? 'Please fix these before continuing' : 'There is a problem'"
+    (select)="goToError($event)"
+  />
+
+  @if (isWizard()) {
+    @let current = currentStep();
+    <sfb-wizard-nav [steps]="steps()" [current]="stepIndex()" [reached]="reached()" (go)="goTo($event)" />
+    @if (current) {
+      <section class="sfb-step" [attr.aria-labelledby]="inst.name + '-step'">
+        <h3 class="sfb-step-title" tabindex="-1" [id]="inst.name + '-step'">
+          Step {{ stepIndex() + 1 }} of {{ steps().length }}: {{ current.step.title }}
+        </h3>
+        @if (current.step.description) {
+          <p class="muted">{{ current.step.description }}</p>
+        }
+        <sfb-node-list [nodes]="current.step.fields" [parent]="root()" />
+      </section>
+    }
+  } @else {
+    <sfb-node-list [nodes]="inst.schema.fields" [parent]="root()" />
+  }
+
+  <div class="sfb-actions">
+    @if (isWizard() && stepIndex() > 0) {
+      <button type="button" class="btn secondary" (click)="back()">Back</button>
+    }
+    @if (isWizard() && !isLastStep()) {
+      <button type="submit" class="btn primary">Next</button>
+    } @else {
+      <button type="submit" class="btn primary" [disabled]="status() === 'checking'">
+        @if (status() === 'checking') {
+          <span class="spinner" aria-hidden="true"></span> Checking…
+        } @else {
+          {{ inst.schema.submitLabel ?? 'Submit' }}
+        }
+      </button>
+    }
+    <button type="button" class="btn ghost" (click)="reset()">Reset</button>
+    <span class="sfb-state muted" aria-live="polite">
+      @if (root()().pending()) {
+        Validating…
+      } @else if (status() === 'done') {
+        Submitted ✓
+      } @else if (root()().dirty()) {
+        Unsaved changes
+      }
+    </span>
+  </div>
+</form>

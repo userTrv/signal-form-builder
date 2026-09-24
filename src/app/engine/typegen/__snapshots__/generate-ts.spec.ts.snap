@@ -1,0 +1,473 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`type generation (text) > matches the snapshot for event 1`] = `
+"/**
+ * Conference registration
+ * Generated from schema "eventRegistration" — model value while editing.
+ */
+export interface EventRegistrationDraft {
+  /** Event */
+  event: 'ng-berlin' | 'signals-camp' | 'frontend-warsaw' | '';
+  /** Days attending */
+  days: { start: string; end: string };
+  /** Attendees */
+  attendees: Array<{
+    /** Name */
+    name: string;
+    /** Email */
+    email: string;
+    /** Ticket */
+    ticket: 'standard' | 'vip' | 'student' | '';
+    /**
+     * Price
+     * @computed \`ticket == 'vip' ? 449 : ticket == 'student' ? 99 : ticket == 'standard' ? 199 : null\`
+     */
+    price: number | null;
+    /**
+     * Student ID
+     * @visibleWhen \`ticket == 'student'\`
+     */
+    studentId: string;
+  }>;
+  /**
+   * Promo code
+   * Try NGCONF or SIGNALS — checked against the mock server.
+   */
+  promo: string;
+  /**
+   * Attendees
+   * @computed \`len(attendees)\`
+   */
+  attendeeCount: number | null;
+  /**
+   * Total
+   * @computed \`sum(attendees.price)\`
+   */
+  total: number | null;
+  /** I need an invoice for a company */
+  invoice: boolean;
+  /**
+   * Company details
+   * @visibleWhen \`invoice\`
+   */
+  company: {
+    /** Company name */
+    name: string;
+    /** VAT ID */
+    vatId: string;
+  };
+}
+"
+`;
+
+exports[`type generation (text) > matches the snapshot for event 2`] = `
+"/**
+ * Conference registration
+ * Generated from schema "eventRegistration" — value after a successful submit.
+ */
+export interface EventRegistrationValue {
+  /** Event */
+  event: 'ng-berlin' | 'signals-camp' | 'frontend-warsaw';
+  /** Days attending */
+  days: { start: string; end: string };
+  /** Attendees */
+  attendees: Array<{
+    /** Name */
+    name: string;
+    /** Email */
+    email: string;
+    /** Ticket */
+    ticket: 'standard' | 'vip' | 'student';
+    /**
+     * Price
+     * @computed \`ticket == 'vip' ? 449 : ticket == 'student' ? 99 : ticket == 'standard' ? 199 : null\`
+     */
+    price: number | null;
+    /**
+     * Student ID
+     * @visibleWhen \`ticket == 'student'\`
+     */
+    studentId: string;
+  }>;
+  /**
+   * Promo code
+   * Try NGCONF or SIGNALS — checked against the mock server.
+   */
+  promo: string;
+  /**
+   * Attendees
+   * @computed \`len(attendees)\`
+   */
+  attendeeCount: number | null;
+  /**
+   * Total
+   * @computed \`sum(attendees.price)\`
+   */
+  total: number | null;
+  /** I need an invoice for a company */
+  invoice: boolean;
+  /**
+   * Company details
+   * @visibleWhen \`invoice\`
+   */
+  company: {
+    /** Company name */
+    name: string;
+    /** VAT ID */
+    vatId: string;
+  };
+}
+"
+`;
+
+exports[`type generation (text) > matches the snapshot for insurance 1`] = `
+"/**
+ * Car insurance quote
+ * Generated from schema "insuranceQuote" — model value while editing.
+ */
+export interface InsuranceQuoteDraft {
+  /** Driver */
+  driver: {
+    /**
+     * Date of birth
+     * ISO date, \`YYYY-MM-DD\`
+     */
+    birthDate: string;
+    /** Years with a licence */
+    licenseYears: number | null;
+  };
+  /** Vehicle */
+  vehicle: {
+    /** Make */
+    make: 'vw' | 'toyota' | 'bmw' | 'tesla' | 'other' | '';
+    /** Year of manufacture */
+    year: number | null;
+    /** Current value */
+    value: number | null;
+  };
+  /** Coverage */
+  coverage: 'liability' | 'partial' | 'full' | '';
+  /**
+   * Deductible
+   * @visibleWhen \`coverage == 'partial' || coverage == 'full'\`
+   */
+  deductible: '0' | '500' | '1000' | '';
+  /** Extras (€45 each) */
+  extras: Array<'roadside' | 'rental' | 'glass'>;
+  /**
+   * Policy start
+   * ISO date, \`YYYY-MM-DD\`
+   */
+  startDate: string;
+  /**
+   * Driver age
+   * @computed \`age(driver.birthDate)\`
+   */
+  driverAge: number | null;
+  /**
+   * Risk factor
+   * @computed \`driverAge == null ? null : driverAge < 25 ? 1.6 : driver.licenseYears < 3 ? 1.3 : 1\`
+   */
+  riskFactor: number | null;
+  /**
+   * Yearly premium
+   * value × rate(coverage) × risk − deductible discount + extras
+   * @computed \`round(vehicle.value * (coverage == 'full' ? 0.045 : coverage == 'partial' ? 0.03 : 0.018) * riskFactor - (deductible == '1000' ? 120 : deductible == '500' ? 60 : 0) + len(extras) * 45, 2)\`
+   */
+  premium: number | null;
+}
+"
+`;
+
+exports[`type generation (text) > matches the snapshot for insurance 2`] = `
+"/**
+ * Car insurance quote
+ * Generated from schema "insuranceQuote" — value after a successful submit.
+ */
+export interface InsuranceQuoteValue {
+  /** Driver */
+  driver: {
+    /**
+     * Date of birth
+     * ISO date, \`YYYY-MM-DD\`
+     */
+    birthDate: string;
+    /** Years with a licence */
+    licenseYears: number;
+  };
+  /** Vehicle */
+  vehicle: {
+    /** Make */
+    make: 'vw' | 'toyota' | 'bmw' | 'tesla' | 'other';
+    /** Year of manufacture */
+    year: number;
+    /** Current value */
+    value: number;
+  };
+  /** Coverage */
+  coverage: 'liability' | 'partial' | 'full';
+  /**
+   * Deductible
+   * @visibleWhen \`coverage == 'partial' || coverage == 'full'\`
+   */
+  deductible: '0' | '500' | '1000' | '';
+  /** Extras (€45 each) */
+  extras: Array<'roadside' | 'rental' | 'glass'>;
+  /**
+   * Policy start
+   * ISO date, \`YYYY-MM-DD\`
+   */
+  startDate: string;
+  /**
+   * Driver age
+   * @computed \`age(driver.birthDate)\`
+   */
+  driverAge: number | null;
+  /**
+   * Risk factor
+   * @computed \`driverAge == null ? null : driverAge < 25 ? 1.6 : driver.licenseYears < 3 ? 1.3 : 1\`
+   */
+  riskFactor: number | null;
+  /**
+   * Yearly premium
+   * value × rate(coverage) × risk − deductible discount + extras
+   * @computed \`round(vehicle.value * (coverage == 'full' ? 0.045 : coverage == 'partial' ? 0.03 : 0.018) * riskFactor - (deductible == '1000' ? 120 : deductible == '500' ? 60 : 0) + len(extras) * 45, 2)\`
+   */
+  premium: number | null;
+}
+"
+`;
+
+exports[`type generation (text) > matches the snapshot for job 1`] = `
+"/**
+ * Job application
+ * Generated from schema "jobApplication" — model value while editing.
+ */
+export interface JobApplicationDraft {
+  /** Full name */
+  fullName: string;
+  /** Email */
+  email: string;
+  /** Phone */
+  phone: string;
+  /** Portfolio or GitHub URL */
+  profileUrl: string;
+  /** Country */
+  country: string;
+  /**
+   * City
+   * Loaded for the selected country.
+   */
+  city: string;
+  /** Role you apply for */
+  role: 'frontend' | 'fullstack' | 'lead' | 'other' | '';
+  /**
+   * Which role?
+   * @visibleWhen \`role == 'other'\`
+   */
+  otherRole: string;
+  /** Years of experience */
+  years: number | null;
+  /**
+   * Skills
+   * Pick at least two.
+   */
+  skills: Array<'angular' | 'rxjs' | 'signals' | 'ngxs' | 'typescript' | 'testing'>;
+  /** Previous positions */
+  positions: Array<{
+    /** Company */
+    company: string;
+    /** Title */
+    title: string;
+    /** Period */
+    period: { start: string; end: string };
+  }>;
+  /**
+   * Available from
+   * ISO date, \`YYYY-MM-DD\`
+   */
+  availableFrom: string;
+  /** Expected salary (yearly) */
+  salary: number | null;
+  /** Work mode */
+  workMode: 'remote' | 'hybrid' | 'office' | '';
+  /**
+   * Open to relocation
+   * @visibleWhen \`workMode != 'remote'\`
+   */
+  relocate: boolean;
+  /**
+   * Preferred city
+   * @visibleWhen \`relocate && workMode != 'remote'\`
+   */
+  relocationCity: string;
+  /**
+   * CV (PDF)
+   * Stays in your browser — only name and size are kept.
+   */
+  cv: FileMeta[];
+  /** Cover letter */
+  coverLetter: string;
+  /** How was this form? */
+  formRating: number | null;
+  /** I agree to the processing of my data for this application */
+  consent: boolean;
+}
+
+export interface FileMeta {
+  name: string;
+  size: number;
+  type: string;
+}
+"
+`;
+
+exports[`type generation (text) > matches the snapshot for job 2`] = `
+"/**
+ * Job application
+ * Generated from schema "jobApplication" — value after a successful submit.
+ */
+export interface JobApplicationValue {
+  /** Full name */
+  fullName: string;
+  /** Email */
+  email: string;
+  /** Phone */
+  phone: string;
+  /** Portfolio or GitHub URL */
+  profileUrl: string;
+  /** Country */
+  country: string;
+  /**
+   * City
+   * Loaded for the selected country.
+   */
+  city: string;
+  /** Role you apply for */
+  role: 'frontend' | 'fullstack' | 'lead' | 'other';
+  /**
+   * Which role?
+   * @visibleWhen \`role == 'other'\`
+   */
+  otherRole: string;
+  /** Years of experience */
+  years: number;
+  /**
+   * Skills
+   * Pick at least two.
+   */
+  skills: Array<'angular' | 'rxjs' | 'signals' | 'ngxs' | 'typescript' | 'testing'>;
+  /** Previous positions */
+  positions: Array<{
+    /** Company */
+    company: string;
+    /** Title */
+    title: string;
+    /** Period */
+    period: { start: string; end: string };
+  }>;
+  /**
+   * Available from
+   * ISO date, \`YYYY-MM-DD\`
+   */
+  availableFrom: string;
+  /** Expected salary (yearly) */
+  salary: number | null;
+  /** Work mode */
+  workMode: 'remote' | 'hybrid' | 'office';
+  /**
+   * Open to relocation
+   * @visibleWhen \`workMode != 'remote'\`
+   */
+  relocate: boolean;
+  /**
+   * Preferred city
+   * @visibleWhen \`relocate && workMode != 'remote'\`
+   */
+  relocationCity: string;
+  /**
+   * CV (PDF)
+   * Stays in your browser — only name and size are kept.
+   */
+  cv: FileMeta[];
+  /** Cover letter */
+  coverLetter: string;
+  /** How was this form? */
+  formRating: number | null;
+  /** I agree to the processing of my data for this application */
+  consent: true;
+}
+
+export interface FileMeta {
+  name: string;
+  size: number;
+  type: string;
+}
+"
+`;
+
+exports[`type generation (text) > matches the snapshot for signup 1`] = `
+"/**
+ * Create an account
+ * Generated from schema "signup" — model value while editing.
+ */
+export interface SignupDraft {
+  /**
+   * Username
+   * Try "admin" or "angular" — they are taken (checked asynchronously).
+   */
+  username: string;
+  /** Email */
+  email: string;
+  /** Password */
+  password: string;
+  /** Confirm password */
+  confirmPassword: string;
+  /** Plan */
+  plan: 'free' | 'pro' | 'team' | '';
+  /**
+   * Seats
+   * Only for the Team plan.
+   * @visibleWhen \`plan == 'team'\`
+   */
+  seats: number | null;
+  /** Send me product updates */
+  newsletter: boolean;
+  /** I accept the terms of service */
+  terms: boolean;
+}
+"
+`;
+
+exports[`type generation (text) > matches the snapshot for signup 2`] = `
+"/**
+ * Create an account
+ * Generated from schema "signup" — value after a successful submit.
+ */
+export interface SignupValue {
+  /**
+   * Username
+   * Try "admin" or "angular" — they are taken (checked asynchronously).
+   */
+  username: string;
+  /** Email */
+  email: string;
+  /** Password */
+  password: string;
+  /** Confirm password */
+  confirmPassword: string;
+  /** Plan */
+  plan: 'free' | 'pro' | 'team';
+  /**
+   * Seats
+   * Only for the Team plan.
+   * @visibleWhen \`plan == 'team'\`
+   */
+  seats: number | null;
+  /** Send me product updates */
+  newsletter: boolean;
+  /** I accept the terms of service */
+  terms: true;
+}
+"
+`;
