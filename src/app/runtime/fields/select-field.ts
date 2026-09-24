@@ -44,13 +44,21 @@ import { FieldShell } from './field-shell';
 export class SelectField extends BaseField<string> {
   private readonly source = computed(() => this.node().optionsSource);
 
-  private readonly params = computed(() => {
-    const src = this.source();
-    if (!src) return undefined;
-    const value = src.params ? this.ctx.evaluate(src.params, this.ctx.keysOf(this.state())) : null;
-    // No request while a dependency is still empty (e.g. no country picked yet).
-    return src.params && (value === '' || value === null || value === undefined) ? undefined : { value };
-  });
+  /**
+   * `ctx.evaluate` reads the whole form value, so this recomputes on every change anywhere in
+   * the form. The `equal` keeps the same params object while the evaluated value is the same;
+   * otherwise the resource would see new params and reload on every keystroke elsewhere.
+   */
+  private readonly params = computed(
+    () => {
+      const src = this.source();
+      if (!src) return undefined;
+      const value = src.params ? this.ctx.evaluate(src.params, this.ctx.keysOf(this.state())) : null;
+      // No request while a dependency is still empty (e.g. no country picked yet).
+      return src.params && (value === '' || value === null || value === undefined) ? undefined : { value };
+    },
+    { equal: (a, b) => a === b || (!!a && !!b && Object.is(a.value, b.value)) },
+  );
 
   protected readonly remote = resource({
     params: () => this.params(),

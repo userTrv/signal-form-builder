@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormSchema } from '../../engine';
+import { FormSchema, mockBackend } from '../../engine';
 import { DynamicFormComponent } from './dynamic-form.component';
 
 /** A small schema with no async validators, so tests never wait on the mock backend. */
@@ -161,5 +161,45 @@ describe('error summary', () => {
     await fixture.whenStable();
     expect(el.querySelector('.sfb-step-title')?.textContent).toContain('Step 1 of 2');
     expect(document.activeElement).toBe(inputFor(el, 'First value'));
+  });
+});
+
+describe('async option lists', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  const DEPENDENT: FormSchema = {
+    id: 'dep',
+    title: 'Dependent',
+    fields: [
+      { type: 'text', key: 'name', label: 'Name' },
+      { type: 'select', key: 'country', label: 'Country', options: [{ value: 'nl', label: 'Netherlands' }, { value: 'de', label: 'Germany' }] },
+      { type: 'select', key: 'city', label: 'City', optionsSource: { provider: 'cities', params: 'country' } },
+    ],
+  };
+
+  it('loads when the params change, and not when an unrelated field changes', { timeout: 10_000 }, async () => {
+    const { fixture, el } = await render(DEPENDENT);
+    const started = () => mockBackend.stats.started;
+    const before = started();
+    const country = inputFor(el, 'Country') as unknown as HTMLSelectElement;
+    country.value = 'nl';
+    country.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(started()).toBe(before + 1);
+    // whenStable() waits for the load (it is a pending task), so the options are there.
+    const cityOptions = () => [...inputFor(el, 'City').querySelectorAll('option')].map((o) => o.textContent?.trim());
+    expect(cityOptions()).toEqual(['Select…', 'Amsterdam', 'Rotterdam', 'Utrecht']);
+
+    type(inputFor(el, 'Name'), 'K');
+    await fixture.whenStable();
+    type(inputFor(el, 'Name'), 'Ki');
+    await fixture.whenStable();
+    expect(started()).toBe(before + 1);
+    expect(cityOptions()).toEqual(['Select…', 'Amsterdam', 'Rotterdam', 'Utrecht']);
+
+    country.value = 'de';
+    country.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(started()).toBe(before + 2);
   });
 });
