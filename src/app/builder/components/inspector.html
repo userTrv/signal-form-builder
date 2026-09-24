@@ -141,13 +141,22 @@
 
   <section class="insp-section" aria-labelledby="insp-move">
     <h3 id="insp-move">Position</h3>
-    <label class="insp-label" for="insp-moveto">Move to</label>
-    <select class="sfb-input" id="insp-moveto" [value]="''" (change)="moveTo($any($event.target).value)">
-      <option value="">Choose a container…</option>
-      @for (d of destinations(); track d.label) {
-        <option [value]="d.path.length ? d.path.join('.') : 'root'">{{ d.label }}</option>
-      }
-    </select>
+    @if (destinations().length) {
+      <label class="insp-label" for="insp-moveto">Move to</label>
+      <div class="insp-row">
+        <select class="sfb-input" id="insp-moveto" (change)="moveTarget.set($any($event.target).value)">
+          <option value="" [selected]="!moveTarget()">Choose a container…</option>
+          @for (d of destinations(); track d.label) {
+            <option [value]="key(d.path)" [selected]="moveTarget() === key(d.path)">{{ d.label }}</option>
+          }
+        </select>
+        <button type="button" class="btn secondary small" [disabled]="!moveTarget()" (click)="moveTo(moveTarget())">Move</button>
+      </div>
+    } @else if (isStep(n)) {
+      <p class="muted small">Reorder steps with the ↑ ↓ buttons on the canvas.</p>
+    } @else {
+      <p class="muted small">Add a group or repeatable group to move this node into it, or use the ↑ ↓ buttons on the canvas.</p>
+    }
   </section>
 } @else {
   <sfb-form-settings />

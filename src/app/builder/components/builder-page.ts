@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, untracked } from '@angular/core';
+import { Component, Injector, computed, effect, inject, input, untracked } from '@angular/core';
 import { FormSchema, validateSchema } from '../../engine';
 import { EXAMPLES } from '../../examples';
 import { FieldRegistry } from '../../runtime/field-registry';
@@ -6,6 +6,7 @@ import { BuilderStore } from '../state/builder-store';
 import { containerPaths, pathKey } from '../state/commands';
 import { SchemaStorage } from '../state/schema-storage';
 import { BuilderToolbar } from './builder-toolbar';
+import { removeKeepingFocus } from './canvas-focus';
 import { CanvasList } from './canvas-list';
 import { Inspector } from './inspector';
 import { Palette } from './palette';
@@ -16,7 +17,8 @@ import { PreviewPanel } from './preview-panel';
   selector: 'sfb-builder-page',
   imports: [BuilderToolbar, Palette, CanvasList, Inspector, PreviewPanel],
   providers: [BuilderStore],
-  host: { '(keydown)': 'onKey($event)' },
+  // Document-level, so undo still works after the focused row was deleted.
+  host: { '(document:keydown)': 'onKey($event)' },
   template: `
     <div class="page builder-page">
       <div class="page-head">
@@ -36,7 +38,7 @@ import { PreviewPanel } from './preview-panel';
       }
       <div class="builder-grid">
         <section class="card b-canvas" aria-labelledby="b-canvas-title">
-          <h2 id="b-canvas-title" class="panel-title">Canvas</h2>
+          <h2 id="b-canvas-title" class="panel-title" tabindex="-1">Canvas</h2>
           <sfb-palette [connectedTo]="listIds()" />
           <sfb-canvas-list [nodes]="store.schema().fields" [parentPath]="[]" [connectedTo]="listIds()" label="Form fields" />
         </section>
@@ -57,6 +59,7 @@ export class BuilderPage {
   protected readonly store = inject(BuilderStore);
   private readonly storage = inject(SchemaStorage);
   private readonly registry = inject(FieldRegistry);
+  private readonly injector = inject(Injector);
 
   /** Drop-list ids, deepest first, so a drop lands in the innermost container. */
   protected readonly listIds = computed(() =>
@@ -97,7 +100,7 @@ export class BuilderPage {
       const sel = this.store.selected();
       if (sel) {
         event.preventDefault();
-        this.store.remove(sel);
+        removeKeepingFocus(this.store, sel, this.injector);
       }
     }
   }

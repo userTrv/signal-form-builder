@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, Injector, computed, inject, linkedSignal } from '@angular/core';
 import {
   CrossFieldCheck,
   FieldNode,
@@ -15,6 +15,7 @@ import {
 import { FieldRegistry } from '../../runtime/field-registry';
 import { BuilderStore } from '../state/builder-store';
 import { containerPaths, pathKey, samePath } from '../state/commands';
+import { focusCanvasNode } from './canvas-focus';
 import { ChecksEditor } from './checks-editor';
 import { ExpressionInput } from './expression-input';
 import { FormSettings } from './form-settings';
@@ -31,6 +32,7 @@ export class Inspector {
   protected readonly store = inject(BuilderStore);
   private readonly registry = inject(FieldRegistry);
   protected readonly providers = mockBackend.optionProviders;
+  private readonly injector = inject(Injector);
 
   protected readonly path = computed(() => this.store.selected());
   protected readonly node = computed(() => this.store.selectedNode());
@@ -125,12 +127,17 @@ export class Inspector {
     this.set('optionsSource', { provider: f.optionsSource.provider, ...(params ? { params } : {}) });
   }
 
+  /** Chosen "Move to" destination; applied by the Move button (arrow keys in a native select fire `change`). */
+  protected readonly moveTarget = linkedSignal({ source: this.path, computation: () => '' });
+  protected readonly key = pathKey;
+
   protected moveTo(key: string): void {
     const path = this.path();
     const dest = this.destinations().find((d) => pathKey(d.path) === key);
     if (!path || !dest) return;
     const count = dest.path.length ? (this.nodeFields(dest.path)?.length ?? 0) : this.store.schema().fields.length;
-    this.store.move(path, dest.path, count);
+    // The Move button disappears with the old destinations: continue on the moved row.
+    if (this.store.move(path, dest.path, count)) focusCanvasNode(this.store.selected(), this.injector);
   }
 
   private nodeFields(path: readonly number[]): readonly SchemaNode[] | null {

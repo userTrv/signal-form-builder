@@ -1,9 +1,10 @@
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, Injector, computed, inject, input } from '@angular/core';
 import { SchemaNode, isField, isStep } from '../../engine';
 import { FieldRegistry } from '../../runtime/field-registry';
 import { BuilderStore } from '../state/builder-store';
 import { NodePath, pathKey, samePath } from '../state/commands';
+import { removeKeepingFocus } from './canvas-focus';
 import { PaletteDragData } from './palette';
 
 interface MoveDragData {
@@ -45,6 +46,7 @@ interface MoveDragData {
             <button
               type="button"
               class="node-main"
+              [attr.data-path]="key(path)"
               [attr.aria-pressed]="isSelected(path)"
               (click)="store.selected.set(path)"
               [attr.aria-label]="'Select ' + title(node) + ' (' + node.type + ')'"
@@ -73,7 +75,7 @@ interface MoveDragData {
               <button type="button" class="icon-btn sm" [disabled]="first" (click)="store.move(path, parentPath(), i - 1)" [attr.aria-label]="'Move ' + title(node) + ' up'">↑</button>
               <button type="button" class="icon-btn sm" [disabled]="last" (click)="store.move(path, parentPath(), i + 1)" [attr.aria-label]="'Move ' + title(node) + ' down'">↓</button>
               <button type="button" class="icon-btn sm" (click)="store.duplicate(path)" [attr.aria-label]="'Duplicate ' + title(node)">⧉</button>
-              <button type="button" class="icon-btn sm danger" (click)="store.remove(path)" [attr.aria-label]="'Delete ' + title(node)">✕</button>
+              <button type="button" class="icon-btn sm danger" (click)="remove(path)" [attr.aria-label]="'Delete ' + title(node)">✕</button>
             </span>
           </div>
           @if (!isField(node)) {
@@ -94,7 +96,9 @@ export class CanvasList {
 
   protected readonly store = inject(BuilderStore);
   private readonly registry = inject(FieldRegistry);
+  private readonly injector = inject(Injector);
   protected readonly isField = isField;
+  protected readonly key = pathKey;
   protected readonly isStep = isStep;
 
   protected readonly listId = computed(() => `list-${pathKey(this.parentPath())}`);
@@ -102,6 +106,10 @@ export class CanvasList {
 
   protected childPath(i: number): NodePath {
     return [...this.parentPath(), i];
+  }
+
+  protected remove(path: NodePath): void {
+    removeKeepingFocus(this.store, path, this.injector);
   }
 
   protected isSelected(path: NodePath): boolean {
