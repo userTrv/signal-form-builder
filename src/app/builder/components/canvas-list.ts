@@ -1,5 +1,5 @@
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
-import { Component, Injector, computed, inject, input } from '@angular/core';
+import { Component, Injector, afterNextRender, computed, inject, input } from '@angular/core';
 import { SchemaNode, isField, isStep } from '../../engine';
 import { FieldRegistry } from '../../runtime/field-registry';
 import { BuilderStore } from '../state/builder-store';
@@ -72,8 +72,8 @@ interface MoveDragData {
               </span>
             </button>
             <span class="node-actions">
-              <button type="button" class="icon-btn sm" [disabled]="first" (click)="store.move(path, parentPath(), i - 1)" [attr.aria-label]="'Move ' + title(node) + ' up'">↑</button>
-              <button type="button" class="icon-btn sm" [disabled]="last" (click)="store.move(path, parentPath(), i + 1)" [attr.aria-label]="'Move ' + title(node) + ' down'">↓</button>
+              <button type="button" class="icon-btn sm" [disabled]="first" (click)="moveBy(path, -1)" [attr.aria-label]="'Move ' + title(node) + ' up'">↑</button>
+              <button type="button" class="icon-btn sm" [disabled]="last" (click)="moveBy(path, 1)" [attr.aria-label]="'Move ' + title(node) + ' down'">↓</button>
               <button type="button" class="icon-btn sm" (click)="store.duplicate(path)" [attr.aria-label]="'Duplicate ' + title(node)">⧉</button>
               <button type="button" class="icon-btn sm danger" (click)="remove(path)" [attr.aria-label]="'Delete ' + title(node)">✕</button>
             </span>
@@ -106,6 +106,24 @@ export class CanvasList {
 
   protected childPath(i: number): NodePath {
     return [...this.parentPath(), i];
+  }
+
+  /**
+   * ↑/↓ buttons. Focus stays on the same button of the moved row; at the first/last position
+   * that button is disabled (and would drop focus to <body>), so use the opposite one.
+   */
+  protected moveBy(path: NodePath, delta: -1 | 1): void {
+    const index = path[path.length - 1];
+    if (!this.store.move(path, this.parentPath(), index + delta)) return;
+    const moved = this.store.selected();
+    afterNextRender(
+      () => {
+        const head = document.querySelector(`.b-canvas [data-path="${pathKey(moved ?? [])}"]`)?.closest('.node-head');
+        const [up, down] = Array.from(head?.querySelectorAll<HTMLButtonElement>('.node-actions button') ?? []);
+        [delta < 0 ? up : down, delta < 0 ? down : up].find((b) => b && !b.disabled)?.focus();
+      },
+      { injector: this.injector },
+    );
   }
 
   protected remove(path: NodePath): void {
