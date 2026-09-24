@@ -31,6 +31,8 @@ import { PreviewPanel } from './preview-panel';
       <sfb-builder-toolbar />
       @if (store.notice(); as notice) {
         <p class="notice warn" role="status">{{ notice }}</p>
+      } @else if (store.info(); as info) {
+        <p class="notice" role="status">{{ info }}</p>
       }
       <div class="builder-grid">
         <section class="card b-canvas" aria-labelledby="b-canvas-title">

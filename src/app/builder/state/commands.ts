@@ -103,6 +103,15 @@ export function insertNode(schema: FormSchema, parent: NodePath, index: number, 
   };
 }
 
+/**
+ * Turns a flat form into a wizard: the existing top-level nodes become the first step.
+ * Returns the schema unchanged when it already has steps or has no fields.
+ */
+export function wrapInStep(schema: FormSchema, title = 'Step 1'): FormSchema {
+  if (!schema.fields.length || schema.fields.some(isStep)) return schema;
+  return { ...schema, fields: [{ type: 'step', id: 'step1', title, fields: schema.fields }] };
+}
+
 export function removeNode(schema: FormSchema, path: NodePath): FormSchema {
   if (!nodeAtPath(schema, path)) throw new CommandError('Nothing to remove');
   const index = path[path.length - 1];

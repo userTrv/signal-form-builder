@@ -13,6 +13,7 @@ import {
   removeNode,
   updateForm,
   updateNode,
+  wrapInStep,
 } from './commands';
 import { HistoryState, initHistory, pushHistory, redo, undo } from './history';
 
@@ -38,6 +39,8 @@ export class BuilderStore {
   readonly canRedo = computed(() => this.history().future.length > 0);
   /** Last command error, shown in a status line (e.g. "Steps can only live at the top level"). */
   readonly notice = signal<string | null>(null);
+  /** Informational status after a command that did more than asked (e.g. wrapped fields into a step). */
+  readonly info = signal<string | null>(null);
 
   readonly validation = computed(() => validateSchema(this.schema(), { kinds: this.registry.kinds }));
   readonly errors = computed(() => this.validation().issues.filter((i) => i.severity === 'error'));
@@ -55,6 +58,7 @@ export class BuilderStore {
 
   private commit(next: FormSchema, coalesceKey: string | null = null): void {
     this.notice.set(null);
+    this.info.set(null);
     this.history.update((h) => pushHistory(h, next, coalesceKey));
   }
 
@@ -76,6 +80,7 @@ export class BuilderStore {
     this.history.set(initHistory(schema));
     this.selected.set(null);
     this.notice.set(null);
+    this.info.set(null);
   }
 
   /** Replaces the schema as an undoable step (examples, import, JSON editor). */
@@ -86,10 +91,16 @@ export class BuilderStore {
 
   add(type: string, parent: NodePath, index?: number): boolean {
     return this.attempt(() => {
-      const count = childrenAt(this.schema(), parent).length;
-      const { schema, path } = insertNode(this.schema(), parent, index ?? count, createNode(type, this.registry.kinds));
+      // Adding a step to a flat form: the existing fields become step 1 (one undo step),
+      // otherwise there would be no way to get from a flat form to a wizard.
+      const flat = this.schema();
+      const wrapped = type === 'step' && !parent.length ? wrapInStep(flat) : flat;
+      const count = childrenAt(wrapped, parent).length;
+      const at = wrapped === flat ? (index ?? count) : count;
+      const { schema, path } = insertNode(wrapped, parent, at, createNode(type, this.registry.kinds));
       this.commit(schema);
       this.selected.set(path);
+      if (wrapped !== flat) this.info.set('The existing fields were moved into “Step 1”. Undo to revert.');
     });
   }
 
@@ -98,7 +109,9 @@ export class BuilderStore {
     const schema = this.schema();
     const sel = this.selected();
     const node = sel ? nodeAtPath(schema, sel) : null;
-    if (sel && node && 'fields' in node && type !== 'step') return this.add(type, sel);
+    // Steps only live at the top level: add after the selection's top-level ancestor.
+    if (type === 'step') return this.add(type, [], sel ? sel[0] + 1 : undefined);
+    if (sel && node && 'fields' in node) return this.add(type, sel);
     if (sel && node) return this.add(type, sel.slice(0, -1), sel[sel.length - 1] + 1);
     const lastStep = schema.fields.length - 1;
     if (type !== 'step' && schema.fields.some((n) => n.type === 'step')) return this.add(type, [lastStep]);
@@ -138,15 +151,17 @@ export class BuilderStore {
 
   undo(): void {
     this.history.update(undo);
-    this.dropStaleSelection();
+    this.afterHistoryMove();
   }
 
   redo(): void {
     this.history.update(redo);
-    this.dropStaleSelection();
+    this.afterHistoryMove();
   }
 
-  private dropStaleSelection(): void {
+  private afterHistoryMove(): void {
+    this.notice.set(null);
+    this.info.set(null);
     const sel = this.selected();
     if (sel && !nodeAtPath(this.schema(), sel)) this.selected.set(null);
   }

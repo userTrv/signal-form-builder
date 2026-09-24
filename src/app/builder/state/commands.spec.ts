@@ -13,6 +13,7 @@ import {
   removeNode,
   uniqueKey,
   updateNode,
+  wrapInStep,
 } from './commands';
 import { initHistory, pushHistory, redo, undo } from './history';
 
@@ -156,5 +157,15 @@ describe('builder history', () => {
     expect(pushHistory(h, 0)).toBe(h);
     for (let i = 1; i <= 150; i++) h = pushHistory(h, i);
     expect(h.past.length).toBe(100);
+  });
+
+  it('wrapInStep turns a flat form into a one-step wizard, and leaves wizards and empty forms alone', () => {
+    const flat = base();
+    const wizard = wrapInStep(flat);
+    expect(wizard.fields).toEqual([{ type: 'step', id: 'step1', title: 'Step 1', fields: flat.fields }]);
+    expect(wrapInStep(wizard)).toBe(wizard);
+    const empty: FormSchema = { id: 'e', title: 'E', fields: [] };
+    expect(wrapInStep(empty)).toBe(empty);
+    expect(validateSchema(wizard).ok).toBe(true);
   });
 });

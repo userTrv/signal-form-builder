@@ -73,10 +73,39 @@ describe('BuilderStore (integration)', () => {
     expect(store.notice()).toBe('A container cannot be moved into itself');
     expect(store.schema()).toBe(before);
 
-    store.add('step', []);
-    expect(store.notice()).toBe('Move the top-level fields into a step first');
+    store.add('step', []); // wraps the fields into step 1 (see below)
     store.add('text', []);
+    expect(store.notice()).toBe('This form is a wizard — drop fields inside a step');
+    store.add('text', [1]);
     expect(store.notice()).toBeNull(); // cleared by the next successful command
+  });
+
+  it('adding a step to a flat form wraps the existing fields into step 1, as one undo step', () => {
+    const store = setup();
+    store.load(SIGNUP as FormSchema);
+    store.selected.set([2]);
+    expect(store.addSmart('step')).toBe(true);
+    const fields = store.schema().fields;
+    expect(fields.map((n) => n.type)).toEqual(['step', 'step']);
+    expect(fields[0]).toMatchObject({ id: 'step1', title: 'Step 1' });
+    expect(keysOf(childrenAt(store.schema(), [0]))).toEqual(keysOf(SIGNUP.fields as readonly SchemaNode[]));
+    expect(store.selected()).toEqual([1]);
+    expect(store.info()).toContain('Step 1');
+    expect(store.validation().ok).toBe(true);
+
+    store.undo();
+    expect(store.schema().fields.map((n) => n.type)).not.toContain('step');
+    expect(store.info()).toBeNull();
+  });
+
+  it('adds a step at the top level even when a nested field is selected', () => {
+    const store = setup();
+    store.add('group', []);
+    store.add('text', [0]);
+    expect(store.selected()).toEqual([0, 0]);
+    store.addSmart('step');
+    expect(store.notice()).toBeNull();
+    expect(store.schema().fields.map((n) => n.type)).toEqual(['step', 'step']);
   });
 
   it('undo/redo walks the whole history, and a new command clears redo', () => {
