@@ -104,9 +104,25 @@ describe('createDynamicForm: async validators (fake timers)', () => {
     TestBed.tick();
   };
 
+  /**
+   * Builds the form and lets it settle before any input, as a rendered form would.
+   *
+   * Field nodes (and their async-validation resources) are created lazily on first access,
+   * and `debounced()` seeds itself with whatever the params are on its *first* read, with no
+   * timer. If the value were set before the first `TestBed.tick()`, that value would count as
+   * the initial one and be checked immediately, bypassing the debounce. In the app the field
+   * is rendered (effects flushed) long before the user types, so do the same here.
+   */
+  const buildIdle = (backend: MockBackend) => {
+    const built = build(SIGNUP, { backend });
+    built.f['username']().pending();
+    TestBed.tick();
+    return built;
+  };
+
   it('debounces, reports pending, then resolves to an error', async () => {
     const backend = new MockBackend(300);
-    const { f } = build(SIGNUP, { backend });
+    const { f } = buildIdle(backend);
     f['username']().value.set('admin');
     TestBed.tick();
     await settle(100); // still debouncing (400 ms)
@@ -119,26 +135,48 @@ describe('createDynamicForm: async validators (fake timers)', () => {
     expect(f['username']().errors().map((e) => e.message)).toEqual(['"admin" is already taken']);
   });
 
-  it('cancels an in-flight check when the value changes', async () => {
-    const backend = new MockBackend(300);
-    const { f } = build(SIGNUP, { backend });
+  // While the next value is debouncing, the resource's params are `loading` and Angular's
+  // resource does not touch the running loader; the old request is aborted when the next one
+  // starts. So a request is only cancelled if it is still running after the debounce.
+  it('aborts an in-flight check when the next one starts', async () => {
+    const backend = new MockBackend(1000);
+    const { f } = buildIdle(backend);
     f['username']().value.set('admin');
     TestBed.tick();
-    await settle(450); // request for "admin" is in flight
+    await settle(450); // request for "admin" started at 400 ms, due at 1400 ms
     expect(backend.stats.started).toBe(1);
     f['username']().value.set('kirill_new');
     TestBed.tick();
-    await settle(450);
-    await settle(400);
-    expect(backend.stats.aborted).toBe(1);
-    expect(backend.stats.completed).toBe(1);
+    await settle(450); // the "kirill_new" request started and aborted the "admin" one
+    expect(backend.stats).toEqual({ started: 2, completed: 0, aborted: 1 });
+    expect(f['username']().pending()).toBe(true);
+    await settle(1000);
+    expect(backend.stats).toEqual({ started: 2, completed: 1, aborted: 1 });
     expect(f['username']().errors()).toEqual([]);
+    expect(f['username']().valid()).toBe(true);
+  });
+
+  it('discards a superseded result that arrives while the next value is debouncing', async () => {
+    const backend = new MockBackend(300);
+    const { f } = buildIdle(backend);
+    f['username']().value.set('admin');
+    TestBed.tick();
+    await settle(450); // "admin" in flight until 700 ms
+    f['username']().value.set('kirill_new');
+    TestBed.tick();
+    await settle(300); // "admin" resolved (taken) during the debounce window
+    expect(backend.stats.completed).toBe(1);
+    expect(f['username']().pending()).toBe(true);
+    expect(f['username']().errors()).toEqual([]);
+    await settle(500);
+    expect(backend.stats).toEqual({ started: 2, completed: 2, aborted: 0 });
+    expect(f['username']().pending()).toBe(false);
     expect(f['username']().valid()).toBe(true);
   });
 
   it('does not call the server while synchronous rules fail', async () => {
     const backend = new MockBackend(100);
-    const { f } = build(SIGNUP, { backend });
+    const { f } = buildIdle(backend);
     f['username']().value.set('ab'); // minLength 3
     TestBed.tick();
     await settle(1000);
