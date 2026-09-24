@@ -13,7 +13,7 @@ interface Tree {
 }
 const now = () => new Date('2026-09-24T12:00:00Z');
 /** `name` collides with `Function.prototype.name` on a callable type, so index with a `string`. */
-const NAME: string = 'name';
+const NAME = 'name' as string;
 
 function build(schema: FormSchema, options: DynamicFormOptions<ModelObject> = {}) {
   const inst = TestBed.runInInjectionContext(() => createUntypedForm(schema, { now, ...options }));

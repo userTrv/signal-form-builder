@@ -66,6 +66,7 @@ describe('type-level inference from `as const` schemas', () => {
         },
       ],
     });
+    expectTypeOf(s).toExtend<FormSchema>();
     expectTypeOf<SubmittedValue<typeof s>>().toEqualTypeOf<{ n: number; m: number | null }>();
   });
 

@@ -12,7 +12,7 @@ export interface TabDef {
 @Component({
   selector: 'sfb-tabs',
   template: `
-    <div class="tabs" role="tablist" [attr.aria-label]="label()" (keydown)="onKey($event)">
+    <div class="tabs" role="tablist" [attr.aria-label]="label()">
       @for (tab of tabs(); track tab.id) {
         <button
           #tabBtn
@@ -23,6 +23,7 @@ export interface TabDef {
           [attr.aria-controls]="prefix() + '-panel'"
           [tabIndex]="tab.id === active() ? 0 : -1"
           (click)="active.set(tab.id)"
+          (keydown)="onKey($event)"
         >
           {{ tab.label }}
         </button>

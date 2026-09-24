@@ -12,7 +12,7 @@
   <sfb-error-summary
     [items]="summaryItems()"
     [title]="isWizard() && summaryItems().length ? 'Please fix these before continuing' : 'There is a problem'"
-    (select)="goToError($event)"
+    (picked)="goToError($event)"
   />
 
   @if (isWizard()) {

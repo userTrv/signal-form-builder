@@ -23,7 +23,7 @@ export interface SummaryItem {
         <ul>
           @for (item of items(); track item.key) {
             <li>
-              <a href="#" (click)="$event.preventDefault(); select.emit(item)">
+              <a href="#" (click)="$event.preventDefault(); picked.emit(item)">
                 <strong>{{ item.label }}</strong>: {{ item.message }}
               </a>
             </li>
@@ -36,7 +36,7 @@ export interface SummaryItem {
 export class ErrorSummary {
   readonly items = input<readonly SummaryItem[]>([]);
   readonly title = input('There is a problem');
-  readonly select = output<SummaryItem>();
+  readonly picked = output<SummaryItem>();
 
   private readonly box = viewChild<ElementRef<HTMLElement>>('box');
 
