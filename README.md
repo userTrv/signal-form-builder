@@ -296,7 +296,7 @@ include type-level tests that fail the build if inference regresses.
 
 ## Run, test, build
 
-Requires Node ≥ 24.15 and pnpm 9.15.4 (`corepack enable`).
+Requires Node ≥ 24.15 and pnpm 10.34.5 (`corepack enable`).
 
 ```bash
 pnpm install
